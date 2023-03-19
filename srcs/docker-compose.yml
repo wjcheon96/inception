@@ -1,0 +1,65 @@
+version: '3'
+
+services:
+  mariadb:
+    image: mariadb
+    build:
+      context: ./requirements/mariadb
+      dockerfile: ./Dockerfile
+    container_name: mariadb
+    restart: always
+    env_file: .env
+    networks:
+      - inception
+    volumes:
+      - db-data:/var/run/mysqld
+
+  wordpress:
+    image: wordpress
+    container_name: wordpress
+    build:
+      context: ./requirements/wordpress
+      dockerfile: ./Dockerfile
+    restart: always
+    env_file: .env
+    volumes:
+      - www-data:/var/www
+    networks:
+      - inception
+    depends_on:
+      - mariadb
+
+  nginx:
+    image: nginx
+    container_name: nginx
+    build:
+      context: ./requirements/nginx
+      dockerfile: ./Dockerfile
+    networks:
+      - inception
+    volumes:
+      - www-data:/var/www
+    restart: always
+    depends_on:
+      - wordpress
+    ports:
+      - "443:443"
+
+networks:
+  inception:
+    driver: bridge
+
+volumes:
+  db-data:
+    driver: local
+    driver_opts:
+      device: '/home/wocheon/data/db'
+      type: 'none'
+      o: 'bind'
+
+  www-data:
+    driver: local
+    driver_opts:
+      device: '/home/wocheon/data/wordpress'
+      type: 'none'
+      o: 'bind'
